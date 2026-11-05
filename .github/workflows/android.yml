@@ -3,29 +3,56 @@ name: Build HEMATO-CELL APK
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
-  prepare:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check archive
-        run: |
-          ls -lh .github/HEMATO_CELL_V1.0_GITHUB_READY.zip
-          unzip -l .github/HEMATO_CELL_V1.0_GITHUB_READY.zip
-
       - name: Extract source
         run: |
-          mkdir source
+          mkdir -p source
           unzip -o .github/HEMATO_CELL_V1.0_GITHUB_READY.zip -d source
 
       - name: Find Android project
         run: |
-          find source -name settings.gradle.kts
-          find source -name gradlew
+          GRADLEW=$(find source -name gradlew -type f | head -n 1)
+          if [ -z "$GRADLEW" ]; then
+            echo "ERREUR: gradlew introuvable"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$GRADLEW")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          chmod +x "$GRADLEW"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        run: |
+          cd "$PROJECT_DIR"
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: HEMATO-CELL-APK
+          path: source/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+          
