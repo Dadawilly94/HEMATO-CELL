@@ -1,1 +1,31 @@
 
+name: Build HEMATO-CELL APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check archive
+        run: |
+          ls -lh .github/HEMATO_CELL_V1.0_GITHUB_READY.zip
+          unzip -l .github/HEMATO_CELL_V1.0_GITHUB_READY.zip
+
+      - name: Extract source
+        run: |
+          mkdir source
+          unzip -o .github/HEMATO_CELL_V1.0_GITHUB_READY.zip -d source
+
+      - name: Find Android project
+        run: |
+          find source -name settings.gradle.kts
+          find source -name gradlew
