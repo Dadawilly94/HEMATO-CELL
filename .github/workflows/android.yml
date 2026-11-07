@@ -43,9 +43,20 @@ jobs:
         with:
           gradle-version: '8.9'
 
- 
       - name: Build APK
         run: gradle -p "$PROJECT_DIR" assembleDebug
+
+      - name: Align Java and Kotlin versions
+        run: |
+          FILE="$PROJECT_DIR/app/build.gradle.kts"
+          if [ ! -f "$FILE" ]; then
+            echo "Gradle file not found: $FILE"
+            find "$PROJECT_DIR" -maxdepth 3 -type f
+            exit 1
+          fi
+          sed -i 's/VERSION_1_8/VERSION_17/g' "$FILE"
+          echo "Java and Kotlin configuration:"
+          grep -nE 'sourceCompatibility|targetCompatibility|jvmTarget' "$FILE" || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
